@@ -3,31 +3,42 @@ import { useFrame } from "@react-three/fiber"
 import { useEffect, useRef } from "react"
 import { Group } from "three"
 
-useGLTF.preload("/robot_playground.glb")
+useGLTF.preload("/sphere_bot.glb")
 
-export default function Model() {
+type ModelProps = {
+  selectedAnimation: string;
+};
+
+export default function  Model({ selectedAnimation }: ModelProps) {
   const group = useRef<Group>(null)
   const { nodes, materials, animations, scene } = useGLTF(
-    "/robot_playground.glb"
+    "/sphere_bot.glb"
   )
   const { actions, clips } = useAnimations(animations, scene)
   const scroll = useScroll()
 
   useEffect(() => {
-    console.log(actions)
-    //@ts-ignore
-    actions["Experiment"].play().paused = true
-  }, [])
-  useFrame(
-    () =>
-      //@ts-ignore
-      (actions["Experiment"].time =
-        //@ts-ignore
-        (actions["Experiment"].getClip().duration * scroll.offset) / 4)
-  )
+    // Pause all actions
+    Object.values(actions).forEach(action => action.paused = true);
+    
+    // Play the selected animation
+    const selectedAction = actions[selectedAnimation];
+    if (selectedAction) {
+      selectedAction.play().paused = false;
+    }
+  }, [selectedAnimation, actions]);
+
+  useFrame(() => {
+    const selectedAction = actions[selectedAnimation];
+    if (selectedAction) {
+      selectedAction.time = (selectedAction.getClip().duration * scroll.offset) / 4;
+    }
+  });
   return (
     <group ref={group}>
-      <primitive object={scene} />
+      <primitive
+       object={scene}
+       position={[2, 0, 0]}  />
     </group>
   )
 }
